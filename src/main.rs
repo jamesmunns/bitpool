@@ -1,8 +1,6 @@
 use bitpool::BitPool;
 
-const BITPOOL: BitPool = BitPool::new();
-
-
+static BITPOOL: BitPool = BitPool::new();
 
 fn main() {
     let alloc = BITPOOL.take_allocator().unwrap();

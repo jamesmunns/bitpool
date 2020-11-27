@@ -198,6 +198,9 @@ pub struct BitPool {
     state: AtomicU8,
 }
 
+unsafe impl Send for BitPool { }
+unsafe impl Sync for BitPool { }
+
 const BP_STATE_UNINIT: u8 = 0;
 const BP_STATE_INITING: u8 = 1;
 const BP_STATE_INITED: u8 = 2;
@@ -221,6 +224,7 @@ pub struct AllocContents<T: Sized> {
 }
 
 pub struct RawBitBox<T: Sized> {
+    allocator: NonNull<BitPool>,
     ptr: NonNull<AllocContents<T>>,
 }
 
@@ -232,11 +236,12 @@ impl<T: Sized> RawBitBox<T> {
     }
 
     pub unsafe fn assume_init(self) -> BitBox<T> {
-        BitBox { ptr: self.ptr }
+        BitBox { ptr: self.ptr, allocator: self.allocator }
     }
 }
 
 pub struct BitBox<T: Sized> {
+    allocator: NonNull<BitPool>,
     ptr: NonNull<AllocContents<T>>,
 }
 
@@ -272,7 +277,10 @@ impl BitAlloc {
             (*new_ptr).header = header;
         }
 
-        Some(RawBitBox { ptr: NonNull::new(new_ptr)? })
+        Some(RawBitBox {
+            ptr: NonNull::new(new_ptr)?,
+            allocator: self.bp,
+        })
     }
 }
 
